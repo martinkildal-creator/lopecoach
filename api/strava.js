@@ -76,6 +76,18 @@ export default async function handler(req, res) {
       return;
     }
 
+    // 5) Proxy the laps (intervals/reps) for one activity, on demand
+    if (action === 'laps') {
+      const token = req.query.token;
+      const id = req.query.id;
+      const r = await fetch(`https://www.strava.com/api/v3/activities/${id}/laps`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const body = await r.json();
+      res.status(r.status).json(body);
+      return;
+    }
+
     res.status(400).json({ error: 'Ukjent action' });
   } catch (e) {
     res.status(500).json({ error: String(e) });
