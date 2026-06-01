@@ -76,11 +76,11 @@ export default async function handler(req, res) {
       return;
     }
 
-    // 5) Proxy the laps (intervals/reps) for one activity, on demand
-    if (action === 'laps') {
+    // 5) Proxy one activity's full detail (description + laps), on demand
+    if (action === 'detail') {
       const token = req.query.token;
       const id = req.query.id;
-      const r = await fetch(`https://www.strava.com/api/v3/activities/${id}/laps`, {
+      const r = await fetch(`https://www.strava.com/api/v3/activities/${id}?include_all_efforts=false`, {
         headers: { Authorization: 'Bearer ' + token }
       });
       const body = await r.json();
