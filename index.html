@@ -225,6 +225,33 @@
   .hm-empty{color:var(--faint);font-size:13px;padding:14px 0}
   .goal-summary{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:12px}
   .goal-summary b{color:var(--run)}
+  /* heart rate */
+  .hrcard{padding:22px 24px}
+  .hr-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .hr-top .maxhr{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:500}
+  .hr-top input{width:72px;font-family:var(--mono);border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:#fff;color:var(--ink);font-size:14px}
+  .hr-top input:focus{outline:none;border-color:var(--run)}
+  .zones{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  @media(max-width:700px){.zones{grid-template-columns:1fr 1fr}}
+  .zone{border:1px solid var(--line2);border-radius:13px;padding:13px 14px;position:relative;overflow:hidden;background:#fffefb}
+  .zone .zbar{position:absolute;top:0;left:0;right:0;height:3px}
+  .zone .zp{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.06em}
+  .zone .zn{font-weight:600;font-size:13px;margin-top:3px}
+  .zone .zr{font-family:var(--mono);font-size:12.5px;color:var(--ink);margin-top:5px}
+  /* hr tag + expandable laps */
+  .lrow .hrtag{font-weight:600}
+  .lrow .hrtag .ic{font-size:12px;vertical-align:-.14em}
+  .lrow .hint{color:var(--faint)}
+  .lrow.clk{cursor:pointer}
+  .lrow.clk:hover{background:rgba(236,90,42,.035)}
+  .lapdetail{background:#fbf8f1;border:1px solid var(--line2);border-radius:12px;margin:0 22px 10px;padding:4px 14px}
+  .laphead,.laprow{display:grid;grid-template-columns:52px 1fr 78px 92px 92px;gap:8px;align-items:center;padding:8px 0;font-size:12.5px}
+  .laphead{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);border-bottom:1px solid var(--line2)}
+  .laprow{border-bottom:1px solid var(--line2);font-family:var(--mono)}
+  .laprow:last-child{border-bottom:none}
+  .laprow .lp-i{color:var(--run);font-weight:700}
+  .laprow .lp-h .ic{font-size:13px;vertical-align:-.14em}
+  .lap-empty{color:var(--faint);font-size:12.5px;padding:11px 0}
 
   footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-weight:600;font-size:13px;padding:11px 20px;border-radius:30px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
@@ -306,6 +333,18 @@
         <div class="heat" id="heat"></div>
         <div class="heat-leg">mindre <span class="hc" style="background:#efe9dd"></span><span class="hc" style="background:#f6c9b3"></span><span class="hc" style="background:#f0a07a"></span><span class="hc" style="background:#ec5a2a"></span><span class="hc" style="background:#c33d12"></span> mer</div>
       </div>
+    </div>
+  </section>
+
+  <!-- PULS -->
+  <section class="reveal" style="animation-delay:.17s">
+    <div class="sec-head"><span class="ic" id="hrIc"></span><h2>Puls</h2><span class="tag">// dine soner</span></div>
+    <div class="card hrcard">
+      <div class="hr-top">
+        <div class="maxhr">Maks puls: <input type="number" id="maxHrInput" min="120" max="230"> bpm</div>
+        <span class="pnote" style="margin:0">Sett makspulsen din, så regnes sonene ut. Snittpuls vises på hver økt — klikk en Strava-økt for å se pulsen pr. intervalldrag.</span>
+      </div>
+      <div class="zones" id="hrZones"></div>
     </div>
   </section>
 
@@ -427,6 +466,7 @@ const P={
   list:'<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
   refresh:'<path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/>',
   link:'<path d="M9 15l6-6"/><path d="M11 6.5l1.2-1.2a3.8 3.8 0 0 1 5.5 5.5L16.5 12"/><path d="M13 17.5l-1.2 1.2a3.8 3.8 0 0 1-5.5-5.5L7.5 12"/>',
+  heart:'<path d="M12 20s-7-4.4-9.3-8.5C1.2 8.5 2.6 5 6 5c2 0 3.2 1.3 4 2.4C10.8 6.3 12 5 14 5c3.4 0 4.8 3.5 3.3 6.5C19 15.6 12 20 12 20z"/>',
   bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/>'
 };
@@ -443,9 +483,10 @@ const Store=(()=>{let mem={};return{
   set(k,v){try{localStorage.setItem(k,v);}catch(e){mem[k]=v;}}
 };})();
 
-let acts=[], settings={raceDate:'2026-09-13'};
+let acts=[], settings={raceDate:'2026-09-13', maxHr:190};
 let mixChart,paceChart,goalChart,trendChart;
-let logFilter='all', paceMonths=12, trendWeeks=3;
+let logFilter='all', paceMonths=12, trendWeeks=3, expanded=new Set();
+const lapCache={};
 const RAMP=[35,42,46,38,50,54,58,46,62,66,68,54,62,48,30];
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -503,14 +544,17 @@ async function syncStrava(silent){
       got=await r.json();if(!Array.isArray(got))break;all=all.concat(got);page++;
     }while(got.length===200&&page<=10);
   }catch(e){if(!silent)setStatus('Synk feilet — kjører appen på en ekte adresse?',true);return;}
-  const have=new Set(acts.map(a=>a.id));let added=0;
+  const byId=new Map(acts.map(a=>[a.id,a]));let added=0,changed=false;
   all.forEach(a=>{
-    const id='sv'+a.id;if(have.has(id))return;have.add(id);
+    const id='sv'+a.id;
+    const hr=Math.round(a.average_heartrate||0)||null, mhr=Math.round(a.max_heartrate||0)||null;
+    const ex=byId.get(id);
+    if(ex){if(ex.avgHr==null&&hr){ex.avgHr=hr;ex.maxHr=mhr;changed=true;}if(ex.sid==null){ex.sid=a.id;changed=true;}return;}
     acts.push({id,source:'strava',sid:a.id,sport:mapSport(a.sport_type||a.type),type:'',date:(a.start_date_local||a.start_date||'').slice(0,10),
-      dist:+((a.distance||0)/1000).toFixed(2),time:a.moving_time||a.elapsed_time||0,elev:Math.round(a.total_elevation_gain||0),rpe:null,note:a.name||''});
+      dist:+((a.distance||0)/1000).toFixed(2),time:a.moving_time||a.elapsed_time||0,elev:Math.round(a.total_elevation_gain||0),avgHr:hr,maxHr:mhr,rpe:null,note:a.name||''});
     added++;
   });
-  if(added){save();renderAll();}
+  if(added||changed){save();renderAll();}
   setStatus(added?('✓ Hentet '+added+' nye økter fra Strava'):'Alt er allerede synket ✓');
   if(added)toast(added+' økter fra Strava ✓');
 }
@@ -564,6 +608,34 @@ function renderRing(){
   $('bestHalf').textContent=b?fmtTime(b.time):'–';
   $('bestHalfSub').textContent=b?b.date:'ingen ½ ennå';
   $('gapStat').textContent=fmtTime(gap);
+}
+function zoneDefs(){return [
+  {n:'Z1 Restitusjon',lo:0,hi:.72,c:'#4fa86a'},
+  {n:'Z2 Lett',lo:.72,hi:.82,c:'#2390b8'},
+  {n:'Z3 Moderat',lo:.82,hi:.87,c:'#dd9a23'},
+  {n:'Z4 Terskel',lo:.87,hi:.92,c:'#ec5a2a'},
+  {n:'Z5 Maks',lo:.92,hi:1.0,c:'#d83a2a'}];}
+function zoneOf(hr){if(!hr||!settings.maxHr)return -1;const p=hr/settings.maxHr,z=zoneDefs();for(let i=0;i<z.length;i++)if(p<z[i].hi)return i;return 4;}
+function renderHrZones(){
+  const mh=settings.maxHr,z=zoneDefs();
+  $('hrZones').innerHTML=z.map(zz=>'<div class="zone"><div class="zbar" style="background:'+zz.c+'"></div><div class="zp">'+Math.round(zz.lo*100)+'–'+Math.round(zz.hi*100)+'%</div><div class="zn">'+zz.n+'</div><div class="zr">'+Math.round(zz.lo*mh)+'–'+Math.round(zz.hi*mh)+' bpm</div></div>').join('');
+}
+async function fetchLaps(a){
+  let t=getTok();if(!t)return [];
+  if(Date.now()/1000>t.expires_at-90){t=await refreshTok(t);if(!t)return [];}
+  try{const r=await fetch('/api/strava?action=laps&token='+encodeURIComponent(t.access)+'&id='+a.sid);if(!r.ok)return [];const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return [];}
+}
+function lapHtml(laps){
+  if(!laps.length)return '<div class="lap-empty">Fant ingen runder/intervaller for denne økta.</div>';
+  const rows=laps.map((l,i)=>{const dist=l.distance||0,t=l.moving_time||l.elapsed_time||0,pace=dist>0?t/(dist/1000):0,hr=l.average_heartrate?Math.round(l.average_heartrate):null,zi=zoneOf(hr),zc=zi>=0?zoneDefs()[zi].c:'#a3ada5';
+    return '<div class="laprow"><span class="lp-i">'+(i+1)+'</span><span class="lp-d">'+(dist>=1000?(dist/1000).toFixed(2)+' km':Math.round(dist)+' m')+'</span><span class="lp-t">'+fmtTime(t)+'</span><span class="lp-p">'+(pace>0?fmtPace(pace)+'/km':'—')+'</span><span class="lp-h" style="color:'+zc+'">'+(hr?ic('heart')+' '+hr:'—')+'</span></div>';}).join('');
+  return '<div class="laphead"><span>Drag</span><span>Distanse</span><span>Tid</span><span>Fart</span><span>Snittpuls</span></div>'+rows;
+}
+function fillLaps(a,el){
+  if(!a.sid){el.innerHTML='<div class="lap-empty">Intervalldetaljer er bare tilgjengelig for Strava-økter.</div>';return;}
+  if(lapCache[a.id]){el.innerHTML=lapHtml(lapCache[a.id]);return;}
+  el.innerHTML='<div class="lap-empty">Henter intervaller fra Strava …</div>';
+  fetchLaps(a).then(laps=>{lapCache[a.id]=laps;if(expanded.has(a.id))el.innerHTML=lapHtml(laps);});
 }
 function updateCountdown(){const target=new Date(settings.raceDate+'T09:00:00');let diff=target-new Date();if(diff<0)diff=0;const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4);$('cdD').textContent=d;$('cdH').textContent=pad(h);$('cdM').textContent=pad(m);$('cdChip').textContent=d+' dager igjen';}
 function renderWeek(){
@@ -646,23 +718,27 @@ function renderLog(){
   let arr=[...acts];if(logFilter!=='all')arr=arr.filter(a=>a.sport===logFilter);
   const sorted=arr.sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1));
   $('emptyMsg').style.display=sorted.length?'none':'block';$('logCount').textContent=sorted.length+' økter';
-  sorted.forEach(a=>{const sp=SPORT[a.sport];const pace=a.dist>0?a.time/a.dist:0;
-    const r=document.createElement('div');r.className='lrow';
-    const isRun=a.sport==='run';
+  sorted.forEach(a=>{const sp=SPORT[a.sport];const pace=a.dist>0?a.time/a.dist:0;const isRun=a.sport==='run';
     const link=a.sid?' <a class="slink" href="https://www.strava.com/activities/'+a.sid+'" target="_blank" rel="noopener" title="Åpne i Strava">'+ic('link')+'</a>':'';
+    const zi=zoneOf(a.avgHr),zc=zi>=0?zoneDefs()[zi].c:'#a3ada5';
+    const hr=a.avgHr?' · <span class="hrtag" style="color:'+zc+'">'+ic('heart')+' '+a.avgHr+'</span>':'';
+    const exp=a.sid?' · <span class="hint">▾ intervaller</span>':'';
+    const r=document.createElement('div');r.className='lrow'+(a.sid?' clk':'');
     r.innerHTML='<span class="sicon" style="background:'+sp.c+'">'+ic(sp.i)+'</span>'+
       '<span class="ldate">'+a.date+'</span>'+
-      '<span class="lname">'+(a.note||sp.label)+link+'<small>'+sp.label+'</small></span>'+
+      '<span class="lname">'+(a.note||sp.label)+link+'<small>'+sp.label+hr+exp+'</small></span>'+
       '<span class="lnum">'+(a.dist>0?a.dist.toFixed(2)+' km':'—')+'</span>'+
       '<span class="lnum lpace">'+fmtTime(a.time)+'</span>'+
       (isRun?'<select data-id="'+a.id+'" class="typesel"><option'+(!a.type?' selected':'')+' value="">—</option>'+['Rolig','Langtur','Terskel','Intervall','Konkurransefart','Fartslek','Konkurranse'].map(t=>'<option'+(a.type===t?' selected':'')+'>'+t+'</option>').join('')+'</select>':'<span class="lnum lpace" style="color:'+sp.c+'">'+(a.dist>0?fmtPace(pace):'—')+'</span>')+
       '<span class="del" data-del="'+a.id+'">✕</span>';
     body.appendChild(r);
+    if(a.sid)r.onclick=e=>{if(e.target.closest('select,a,.del'))return;if(expanded.has(a.id))expanded.delete(a.id);else expanded.add(a.id);renderLog();};
+    if(expanded.has(a.id)){const det=document.createElement('div');det.className='lapdetail';body.appendChild(det);fillLaps(a,det);}
   });
   body.querySelectorAll('.typesel').forEach(s=>s.onchange=()=>{const a=acts.find(x=>x.id==s.dataset.id);if(a){a.type=s.value;save();renderHM();}});
-  body.querySelectorAll('.del').forEach(x=>x.onclick=()=>{acts=acts.filter(a=>a.id!=x.dataset.del);save();renderAll();toast('Økt slettet');});
+  body.querySelectorAll('.del').forEach(x=>x.onclick=e=>{e.stopPropagation();acts=acts.filter(a=>a.id!=x.dataset.del);save();renderAll();toast('Økt slettet');});
 }
-function renderAll(){renderRing();renderWeek();renderMix();renderHeat();renderPace();renderGoal();renderTrend();renderFilters();renderLog();renderHM();}
+function renderAll(){renderRing();renderWeek();renderMix();renderHeat();renderHrZones();renderPace();renderGoal();renderTrend();renderFilters();renderLog();renderHM();}
 
 /* ===== events ===== */
 function livePace(){const d=parseFloat($('iDist').value),t=parseT($('iTime').value);if(d>0&&t>0){const p=t/d;$('livePace').textContent='→ '+fmtPace(p)+' /km'+(p<=TARGET_PACE?' 🎯':'');}else $('livePace').textContent='';}
@@ -677,6 +753,7 @@ function wire(){
   $('syncBtn').onclick=()=>syncStrava(false);
   $('paceSel').onchange=e=>{paceMonths=+e.target.value;renderPace();};
   $('trendSel').onchange=e=>{trendWeeks=+e.target.value;renderTrend();};
+  $('maxHrInput').onchange=e=>{const v=+e.target.value;if(v>=120&&v<=230){settings.maxHr=v;saveSet();renderHrZones();renderLog();}};
   const dz=$('dropzone'),fi=$('fileInput');dz.onclick=()=>fi.click();fi.onchange=e=>{if(e.target.files.length)handleFiles([...e.target.files]);fi.value='';};
   ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
   ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
@@ -688,13 +765,14 @@ function paintIcons(){
   $('brandIcon').innerHTML=ic('bolt');$('flagIc').innerHTML=ic('flag');$('calIc').innerHTML=ic('cal');
   $('weekIc').innerHTML=ic('cal');$('wsRun').innerHTML=ic('run');$('plusIc').innerHTML=ic('plus');
   $('impIc').innerHTML=ic('upload');$('dzIc').innerHTML=ic('upload');$('listIc').innerHTML=ic('list');
-  $('planIc').innerHTML=ic('target');$('stravaIc').innerHTML=ic('bolt');$('syncIc').innerHTML=ic('refresh');
+  $('planIc').innerHTML=ic('target');$('stravaIc').innerHTML=ic('bolt');$('syncIc').innerHTML=ic('refresh');$('hrIc').innerHTML=ic('heart');
   document.querySelectorAll('.pli').forEach(e=>e.innerHTML=ic('spark').replace('class="ic"','class="ic" style="width:13px;height:13px"'));
 }
 (function(){
   paintIcons();
   load();
   $('raceDate').value=settings.raceDate;
+  $('maxHrInput').value=settings.maxHr;
   $('iDate').value=new Date().toISOString().slice(0,10);
   wire();
   updateCountdown();setInterval(updateCountdown,30000);
