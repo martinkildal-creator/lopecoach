@@ -199,6 +199,33 @@
   .btn.ghost:hover{color:var(--ink)}
   .live{font-family:var(--mono);font-size:13px;color:var(--run);margin-left:auto}
 
+  /* period selector + panel head */
+  .panel-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+  .panel-head .ph-txt{flex:1}
+  .panel-head h3{margin-bottom:3px}
+  .psel{font-family:var(--body);font-size:12px;border:1px solid var(--line);border-radius:9px;padding:5px 8px;background:#fff;color:var(--muted);cursor:pointer}
+  .psel:focus{outline:none;border-color:var(--run)}
+  /* filter chips */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:16px 22px 4px}
+  .fchip{border:1px solid var(--line);background:#fff;border-radius:30px;padding:6px 13px;font-size:12.5px;font-weight:500;color:var(--muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:.12s}
+  .fchip .ic{font-size:14px}
+  .fchip:hover{border-color:var(--run);color:var(--ink)}
+  .fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .slink{color:var(--run);text-decoration:none;vertical-align:-.12em;margin-left:5px}
+  .slink:hover{opacity:.65}
+  /* hm history */
+  .hmrow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line2);font-size:13.5px}
+  .hmrow:last-child{border-bottom:none}
+  .hmrow .hm-date{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:84px}
+  .hmrow .hm-name{flex:1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hmrow .hm-time{font-family:var(--mono);font-weight:700}
+  .hmrow .hm-pace{font-family:var(--mono);font-size:12px;color:var(--faint);min-width:64px;text-align:right}
+  .hmrow.pr{background:linear-gradient(90deg,rgba(221,154,35,.12),transparent);margin:0 -12px;padding:11px 12px;border-radius:10px}
+  .hm-pr{font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;background:var(--gold);padding:2px 7px;border-radius:20px}
+  .hm-empty{color:var(--faint);font-size:13px;padding:14px 0}
+  .goal-summary{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:12px}
+  .goal-summary b{color:var(--run)}
+
   footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-weight:600;font-size:13px;padding:11px 20px;border-radius:30px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -226,8 +253,8 @@
       <p class="lede">Fra 1:29 på Jessheim til under 80 minutter. All treningen din — løp, sykkel, styrke — samlet ett sted.</p>
       <div class="hero-stats">
         <div class="hs"><span class="lab">Måltid</span><span class="num gold">1:20:00</span><span class="sub">3:47 /km</span></div>
-        <div class="hs"><span class="lab">PR nå</span><span class="num">1:29:00</span><span class="sub">Jessheim ½</span></div>
-        <div class="hs"><span class="lab">Predikert ½</span><span class="num run" id="predHM">–</span><span class="sub" id="predNote">beste økt</span></div>
+        <div class="hs"><span class="lab">Beste ½</span><span class="num" id="bestHalf">–</span><span class="sub" id="bestHalfSub">—</span></div>
+        <div class="hs"><span class="lab">Tidsgap</span><span class="num run" id="gapStat">–</span><span class="sub">til 1:20</span></div>
       </div>
     </div>
     <div class="card hero-goal">
@@ -286,14 +313,31 @@
   <section class="reveal" style="animation-delay:.2s">
     <div class="grid g2">
       <div class="card panel">
-        <h3>Formkurve</h3>
-        <div class="pnote">Løpefart over tid · stiplet = målfart 3:47/km</div>
+        <div class="panel-head"><div class="ph-txt"><h3>Formkurve</h3><div class="pnote">Løpefart · stiplet = målfart 3:47/km</div></div>
+          <select class="psel" id="paceSel"><option value="1">1 mnd</option><option value="3">3 mnd</option><option value="6">6 mnd</option><option value="12" selected>12 mnd</option></select></div>
         <div class="chart-box"><canvas id="paceChart"></canvas></div>
       </div>
       <div class="card panel">
-        <h3>Ukesvolum løping</h3>
-        <div class="pnote">Kilometer pr. uke — motoren mot sub-1:20</div>
-        <div class="chart-box"><canvas id="volChart"></canvas></div>
+        <h3>Ukesmål — løping</h3>
+        <div class="pnote">Søyle = løpt km · markør = mål · grønn = nådd</div>
+        <div class="chart-box"><canvas id="goalChart"></canvas></div>
+        <div class="goal-summary" id="goalSummary"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TREND + HM -->
+  <section class="reveal" style="animation-delay:.22s">
+    <div class="grid g2">
+      <div class="card panel">
+        <div class="panel-head"><div class="ph-txt"><h3>Løping pr. uke</h3><div class="pnote">Kilometer-trend over tid</div></div>
+          <select class="psel" id="trendSel"><option value="3" selected>3 uker</option><option value="6">6 uker</option><option value="12">12 uker</option><option value="0">Alle</option></select></div>
+        <div class="chart-box"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="card panel">
+        <h3>Halvmaraton-historikk</h3>
+        <div class="pnote">Hentet automatisk fra dine ½-løp (~21,1 km)</div>
+        <div id="hmList"></div>
       </div>
     </div>
   </section>
@@ -337,6 +381,7 @@
   <section class="reveal" style="animation-delay:.3s">
     <div class="sec-head"><span class="ic" id="listIc"></span><h2>Øktlogg</h2><span class="tag" id="logCount"></span></div>
     <div class="card logcard">
+      <div class="chips" id="logFilters"></div>
       <div class="lrow head"><span></span><span>Dato</span><span>Økt</span><span>Distanse</span><span>Tid</span><span>Fart/Type</span><span></span></div>
       <div id="logBody"></div>
       <div class="empty" id="emptyMsg" style="display:none">Ingen økter ennå — koble til Strava, importer en fil, eller logg manuelt ↑</div>
@@ -381,6 +426,7 @@ const P={
   upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
   refresh:'<path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/>',
+  link:'<path d="M9 15l6-6"/><path d="M11 6.5l1.2-1.2a3.8 3.8 0 0 1 5.5 5.5L16.5 12"/><path d="M13 17.5l-1.2 1.2a3.8 3.8 0 0 1-5.5-5.5L7.5 12"/>',
   bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/>'
 };
@@ -398,7 +444,9 @@ const Store=(()=>{let mem={};return{
 };})();
 
 let acts=[], settings={raceDate:'2026-09-13'};
-let mixChart,paceChart,volChart;
+let mixChart,paceChart,goalChart,trendChart;
+let logFilter='all', paceMonths=12, trendWeeks=3;
+const RAMP=[35,42,46,38,50,54,58,46,62,66,68,54,62,48,30];
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
 function fmtPace(s){if(!isFinite(s)||s<=0)return '–';return Math.floor(s/60)+':'+pad(Math.round(s%60));}
@@ -411,23 +459,15 @@ function mondayOf(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.
 function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 
 /* ===== state ===== */
-function seed(){
-  const today=new Date();const d=n=>{const x=new Date(today);x.setDate(x.getDate()-n);return ymd(x);};
-  acts=[
-    {id:'seed-jess',source:'seed',sport:'run',type:'Konkurranse',date:'2026-05-31',dist:21.0975,time:PR_SEC,elev:120,rpe:9,note:'Jessheim ½ — PR! Utgangspunktet vårt.'},
-    {id:'s1',source:'seed',sport:'run',type:'Rolig',date:d(1),dist:9.2,time:2700,elev:60,rpe:4,note:'Rolig restitusjon'},
-    {id:'s2',source:'seed',sport:'strength',type:'',date:d(2),dist:0,time:2700,elev:0,rpe:6,note:'Styrke: rumpe + kjerne'},
-    {id:'s3',source:'seed',sport:'run',type:'Terskel',date:d(3),dist:11.5,time:2820,elev:40,rpe:7,note:'5×6 min @ 3:52'},
-    {id:'s4',source:'seed',sport:'bike',type:'',date:d(4),dist:32,time:4200,elev:280,rpe:5,note:'Lett sykkeltur'},
-    {id:'s5',source:'seed',sport:'run',type:'Langtur',date:d(6),dist:18.5,time:5550,elev:150,rpe:6,note:'Langtur i fint vær'},
-    {id:'s6',source:'seed',sport:'run',type:'Rolig',date:d(8),dist:8,time:2400,elev:30,rpe:3,note:''},
-    {id:'s7',source:'seed',sport:'run',type:'Intervall',date:d(10),dist:10,time:2580,elev:20,rpe:8,note:'6×1000 @ 3:33'}
-  ];
+function ensureBaseline(){
+  acts=acts.filter(a=>a.source!=='seed');           // fjern gamle eksempel-økter
+  const hasJess=acts.some(a=>a.date==='2026-05-31'&&a.sport==='run'&&a.dist>=20.5&&a.dist<=21.6);
+  if(!hasJess)acts.push({id:'jess',source:'race',sport:'run',type:'Konkurranse',date:'2026-05-31',dist:21.0975,time:PR_SEC,elev:120,rpe:9,note:'Jessheim ½'});
 }
 function load(){
   try{const a=Store.get('lc_acts');if(a)acts=JSON.parse(a);}catch(e){acts=[];}
   try{const s=Store.get('lc_set');if(s)settings=Object.assign(settings,JSON.parse(s));}catch(e){}
-  if(!acts||!acts.length){seed();save();}
+  const n=acts.length;ensureBaseline();if(acts.length!==n)save();
 }
 function save(){Store.set('lc_acts',JSON.stringify(acts));}
 function saveSet(){Store.set('lc_set',JSON.stringify(settings));}
@@ -466,7 +506,7 @@ async function syncStrava(silent){
   const have=new Set(acts.map(a=>a.id));let added=0;
   all.forEach(a=>{
     const id='sv'+a.id;if(have.has(id))return;have.add(id);
-    acts.push({id,source:'strava',sport:mapSport(a.sport_type||a.type),type:'',date:(a.start_date_local||a.start_date||'').slice(0,10),
+    acts.push({id,source:'strava',sid:a.id,sport:mapSport(a.sport_type||a.type),type:'',date:(a.start_date_local||a.start_date||'').slice(0,10),
       dist:+((a.distance||0)/1000).toFixed(2),time:a.moving_time||a.elapsed_time||0,elev:Math.round(a.total_elevation_gain||0),rpe:null,note:a.name||''});
     added++;
   });
@@ -510,8 +550,21 @@ function ingest(parsed){const have=new Set(acts.map(dupKey));let add=0,skip=0;pa
 async function handleFiles(files){setStatus('Leser '+files.length+' fil(er) …');let A=0,S=0,bad=0;for(const f of files){try{const text=await f.text();const ext=f.name.toLowerCase().split('.').pop();let p=[];if(ext==='gpx'||text.includes('<gpx'))p=parseGPX(text);else if(ext==='tcx'||text.includes('TrainingCenterDatabase'))p=parseTCX(text);else p=parseCSV(text);const{add,skip}=ingest(p);A+=add;S+=skip;if(!p.length)bad++;}catch(e){bad++;}}if(A||S)setStatus('✓ Importerte '+A+' nye økter'+(S?' ('+S+' dubletter hoppet over)':'')+'. Husk å sette økttype på løpeturene.');else setStatus('Fant ingen økter i filene. Sjekk at det er activities.csv eller .gpx/.tcx.',true);if(A)toast(A+' økter importert ✓');}
 
 /* ===== render ===== */
-function predictHM(){let best=null;acts.forEach(a=>{if(a.sport==='run'&&a.dist>=4&&a.time>0){const pr=a.time*Math.pow(HM/a.dist,1.06);if(!best||pr<best.pr)best={pr,a};}});if(best){$('predHM').textContent=fmtTime(best.pr);$('predNote').textContent=best.a.dist.toFixed(1)+' km · '+best.a.date;return best.pr;}$('predHM').textContent='–';return null;}
-function renderRing(){const pr=predictHM();let p=0;if(pr){p=(PR_SEC-pr)/(PR_SEC-TARGET_SEC);}p=Math.max(0,Math.min(1,p));const C=2*Math.PI*74;$('ringFg').style.strokeDasharray=C;$('ringFg').style.strokeDashoffset=C*(1-p);$('ringPct').textContent=Math.round(p*100)+'%';$('gapTxt').textContent=pr?fmtTime(Math.max(0,pr-TARGET_SEC)):'9:00';}
+function bestHalf(){let b=null;acts.forEach(a=>{if(a.sport==='run'&&a.dist>=20.5&&a.dist<=21.6&&a.time>0){if(!b||a.time<b.time)b=a;}});return b;}
+function allHalfs(){return acts.filter(a=>a.sport==='run'&&a.dist>=20.5&&a.dist<=21.6&&a.time>0).sort((x,y)=>x.time-y.time);}
+function weeklyGoals(){const g={};const base=mondayOf(new Date());RAMP.forEach((km,i)=>{const d=new Date(base);d.setDate(d.getDate()+i*7);g[isoWeek(d)]=km;});return g;}
+function weeklyRunKm(){const w={};acts.forEach(a=>{if(a.sport==='run'){const k=isoWeek(new Date(a.date));w[k]=(w[k]||0)+a.dist;}});return w;}
+function renderRing(){
+  const b=bestHalf();
+  const gap=b?Math.max(0,b.time-TARGET_SEC):(PR_SEC-TARGET_SEC);
+  let p=b?(PR_SEC-b.time)/(PR_SEC-TARGET_SEC):0;p=Math.max(0,Math.min(1,p));
+  const C=2*Math.PI*74;$('ringFg').style.strokeDasharray=C;$('ringFg').style.strokeDashoffset=C*(1-p);
+  $('ringPct').textContent=Math.round(p*100)+'%';
+  $('gapTxt').textContent=fmtTime(gap);
+  $('bestHalf').textContent=b?fmtTime(b.time):'–';
+  $('bestHalfSub').textContent=b?b.date:'ingen ½ ennå';
+  $('gapStat').textContent=fmtTime(gap);
+}
 function updateCountdown(){const target=new Date(settings.raceDate+'T09:00:00');let diff=target-new Date();if(diff<0)diff=0;const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4);$('cdD').textContent=d;$('cdH').textContent=pad(h);$('cdM').textContent=pad(m);$('cdChip').textContent=d+' dager igjen';}
 function renderWeek(){
   const mon=mondayOf(new Date());const sun=new Date(mon);sun.setDate(sun.getDate()+6);
@@ -541,37 +594,75 @@ function renderHeat(){
   const tiers=['#efe9dd','#f6c9b3','#f0a07a','#ec5a2a','#c33d12'];
   for(let w=0;w<weeks;w++){const col=document.createElement('div');col.className='heat-col';for(let dn=0;dn<7;dn++){const d=new Date(start);d.setDate(d.getDate()+w*7+dn);const sec=byDay[ymd(d)]||0;const min=sec/60;let t=0;if(min>0)t=1;if(min>=30)t=2;if(min>=55)t=3;if(min>=85)t=4;const cell=document.createElement('div');cell.className='hc';cell.style.background=tiers[t];cell.title=ymd(d)+(sec?' · '+fmtDur(sec):' · fri');col.appendChild(cell);}heat.appendChild(col);}
 }
-function renderCharts(){
-  const runs=acts.filter(a=>a.sport==='run'&&a.dist>0&&a.time>0).sort((x,y)=>x.date.localeCompare(y.date));
+function renderPace(){
+  const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-paceMonths);
+  const runs=acts.filter(a=>a.sport==='run'&&a.dist>0&&a.time>0&&new Date(a.date)>=cutoff).sort((x,y)=>x.date.localeCompare(y.date));
   const labels=runs.map(r=>r.date.slice(5)),paces=runs.map(r=>+(r.time/r.dist/60).toFixed(3));
   if(paceChart)paceChart.destroy();
   paceChart=new Chart($('paceChart'),{type:'line',data:{labels,datasets:[
-    {data:paces,borderColor:'#ec5a2a',borderWidth:2.5,tension:.32,pointBackgroundColor:'#ec5a2a',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:7,fill:true,backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,'rgba(236,90,42,.16)');g.addColorStop(1,'rgba(236,90,42,0)');return g;}},
+    {data:paces,borderColor:'#ec5a2a',borderWidth:2.5,tension:.32,pointBackgroundColor:'#ec5a2a',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,pointHoverRadius:7,fill:true,backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,'rgba(236,90,42,.16)');g.addColorStop(1,'rgba(236,90,42,0)');return g;}},
     {data:labels.map(()=>+(TARGET_PACE/60).toFixed(3)),borderColor:'#dd9a23',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const m=Math.floor(c.parsed.y);return m+':'+pad(Math.round((c.parsed.y-m)*60))+' /km';}}}},scales:{y:{reverse:true,grid:{color:'#efe9dd'},ticks:{color:'#697a72',font:{family:'JetBrains Mono'},callback:v=>{const m=Math.floor(v);return m+':'+pad(Math.round((v-m)*60));}}},x:{grid:{display:false},ticks:{color:'#a3ada5',maxRotation:0,autoSkip:true,maxTicksLimit:8}}}}});
-  const weeks={};acts.forEach(a=>{if(a.sport==='run'){const k=isoWeek(new Date(a.date));weeks[k]=(weeks[k]||0)+a.dist;}});const wk=Object.keys(weeks).sort();
-  if(volChart)volChart.destroy();
-  volChart=new Chart($('volChart'),{type:'bar',data:{labels:wk,datasets:[{data:wk.map(k=>+weeks[k].toFixed(1)),backgroundColor:'#2390b8',borderRadius:7,maxBarThickness:40}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' km'}}},scales:{y:{grid:{color:'#efe9dd'},ticks:{color:'#697a72',font:{family:'JetBrains Mono'}}},x:{grid:{display:false},ticks:{color:'#a3ada5',maxRotation:0,autoSkip:true,maxTicksLimit:8}}}}});
+}
+function renderGoal(){
+  const goals=weeklyGoals(),runKm=weeklyRunKm();
+  const keys=Object.keys(goals).sort();const todayMon=mondayOf(new Date());
+  const labels=[],actual=[],goalArr=[],colors=[];let met=0,done=0;
+  keys.forEach((ws,i)=>{
+    const km=+(runKm[ws]||0).toFixed(1),goal=goals[ws];
+    labels.push('U'+(ws.split('-V')[1]||ws));actual.push(km);goalArr.push(goal);
+    const mon=new Date(todayMon);mon.setDate(mon.getDate()+i*7);
+    if(mon>todayMon)colors.push('#d8d0c2');
+    else{done++;if(km>=goal){colors.push('#4fa86a');met++;}else colors.push('#ec5a2a');}
+  });
+  if(goalChart)goalChart.destroy();
+  goalChart=new Chart($('goalChart'),{type:'bar',data:{labels,datasets:[
+    {type:'bar',data:actual,backgroundColor:colors,borderRadius:6,maxBarThickness:30,order:2},
+    {type:'line',data:goalArr,showLine:false,pointStyle:'line',pointRadius:11,pointBorderColor:'#1f2b26',pointBorderWidth:2,order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex===1?('Mål: '+c.parsed.y+' km'):(c.parsed.y+' km løpt')}}},scales:{y:{grid:{color:'#efe9dd'},ticks:{color:'#697a72',font:{family:'JetBrains Mono'}}},x:{grid:{display:false},ticks:{color:'#a3ada5',maxRotation:0,autoSkip:true,maxTicksLimit:10}}}}});
+  $('goalSummary').innerHTML=done?('Nådd ukesmålet <b>'+met+' av '+done+'</b> uker så langt.'):'Planen starter denne uka — søylene fylles etter hvert.';
+}
+function renderTrend(){
+  const w=weeklyRunKm();let keys=Object.keys(w).sort();if(trendWeeks>0)keys=keys.slice(-trendWeeks);
+  const labels=keys.map(k=>'U'+(k.split('-V')[1]||k));
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart($('trendChart'),{type:'line',data:{labels,datasets:[{data:keys.map(k=>+w[k].toFixed(1)),borderColor:'#2390b8',borderWidth:2.5,tension:.3,pointBackgroundColor:'#2390b8',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:7,fill:true,backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,'rgba(35,144,184,.16)');g.addColorStop(1,'rgba(35,144,184,0)');return g;}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' km'}}},scales:{y:{grid:{color:'#efe9dd'},ticks:{color:'#697a72',font:{family:'JetBrains Mono'}}},x:{grid:{display:false},ticks:{color:'#a3ada5',maxRotation:0,autoSkip:true,maxTicksLimit:8}}}}});
+}
+function renderHM(){
+  const list=allHalfs(),el=$('hmList');
+  if(!list.length){el.innerHTML='<div class="hm-empty">Ingen halvmaraton funnet ennå. Løp ett (eller logg en gammel manuelt med distanse 21,1 og type Konkurranse), så dukker det opp her.</div>';return;}
+  el.innerHTML=list.map((a,i)=>'<div class="hmrow'+(i===0?' pr':'')+'"><span class="hm-date">'+a.date+'</span><span class="hm-name">'+(a.note||'Halvmaraton')+(a.sid?' <a class="slink" href="https://www.strava.com/activities/'+a.sid+'" target="_blank" rel="noopener">'+ic('link')+'</a>':'')+'</span>'+(i===0?'<span class="hm-pr">PR</span>':'')+'<span class="hm-time">'+fmtTime(a.time)+'</span><span class="hm-pace">'+fmtPace(a.time/a.dist)+'/km</span></div>').join('');
+}
+function renderFilters(){
+  const present=[...new Set(acts.map(a=>a.sport))];
+  const order=['run','bike','strength','swim','walk','other'].filter(s=>present.includes(s));
+  const chip=(k,l,ico)=>'<span class="fchip'+(logFilter===k?' on':'')+'" data-f="'+k+'"><span class="ic">'+ic(ico)+'</span>'+l+'</span>';
+  const el=$('logFilters');
+  el.innerHTML=chip('all','Alle','list')+order.map(s=>chip(s,SPORT[s].label,SPORT[s].i)).join('');
+  el.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{logFilter=c.dataset.f;renderFilters();renderLog();});
 }
 function renderLog(){
-  const body=$('logBody');body.innerHTML='';const sorted=[...acts].sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1));
+  const body=$('logBody');body.innerHTML='';
+  let arr=[...acts];if(logFilter!=='all')arr=arr.filter(a=>a.sport===logFilter);
+  const sorted=arr.sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1));
   $('emptyMsg').style.display=sorted.length?'none':'block';$('logCount').textContent=sorted.length+' økter';
   sorted.forEach(a=>{const sp=SPORT[a.sport];const pace=a.dist>0?a.time/a.dist:0;
     const r=document.createElement('div');r.className='lrow';
     const isRun=a.sport==='run';
+    const link=a.sid?' <a class="slink" href="https://www.strava.com/activities/'+a.sid+'" target="_blank" rel="noopener" title="Åpne i Strava">'+ic('link')+'</a>':'';
     r.innerHTML='<span class="sicon" style="background:'+sp.c+'">'+ic(sp.i)+'</span>'+
       '<span class="ldate">'+a.date+'</span>'+
-      '<span class="lname">'+(a.note||sp.label)+'<small>'+sp.label+'</small></span>'+
+      '<span class="lname">'+(a.note||sp.label)+link+'<small>'+sp.label+'</small></span>'+
       '<span class="lnum">'+(a.dist>0?a.dist.toFixed(2)+' km':'—')+'</span>'+
       '<span class="lnum lpace">'+fmtTime(a.time)+'</span>'+
       (isRun?'<select data-id="'+a.id+'" class="typesel"><option'+(!a.type?' selected':'')+' value="">—</option>'+['Rolig','Langtur','Terskel','Intervall','Konkurransefart','Fartslek','Konkurranse'].map(t=>'<option'+(a.type===t?' selected':'')+'>'+t+'</option>').join('')+'</select>':'<span class="lnum lpace" style="color:'+sp.c+'">'+(a.dist>0?fmtPace(pace):'—')+'</span>')+
       '<span class="del" data-del="'+a.id+'">✕</span>';
     body.appendChild(r);
   });
-  body.querySelectorAll('.typesel').forEach(s=>s.onchange=()=>{const a=acts.find(x=>x.id==s.dataset.id);if(a){a.type=s.value;save();}});
+  body.querySelectorAll('.typesel').forEach(s=>s.onchange=()=>{const a=acts.find(x=>x.id==s.dataset.id);if(a){a.type=s.value;save();renderHM();}});
   body.querySelectorAll('.del').forEach(x=>x.onclick=()=>{acts=acts.filter(a=>a.id!=x.dataset.del);save();renderAll();toast('Økt slettet');});
 }
-function renderAll(){renderRing();renderWeek();renderMix();renderHeat();renderCharts();renderLog();}
+function renderAll(){renderRing();renderWeek();renderMix();renderHeat();renderPace();renderGoal();renderTrend();renderFilters();renderLog();renderHM();}
 
 /* ===== events ===== */
 function livePace(){const d=parseFloat($('iDist').value),t=parseT($('iTime').value);if(d>0&&t>0){const p=t/d;$('livePace').textContent='→ '+fmtPace(p)+' /km'+(p<=TARGET_PACE?' 🎯':'');}else $('livePace').textContent='';}
@@ -584,6 +675,8 @@ function wire(){
   $('iDist').oninput=livePace;$('iTime').oninput=livePace;
   $('raceDate').onchange=e=>{settings.raceDate=e.target.value;saveSet();updateCountdown();renderRing();};
   $('syncBtn').onclick=()=>syncStrava(false);
+  $('paceSel').onchange=e=>{paceMonths=+e.target.value;renderPace();};
+  $('trendSel').onchange=e=>{trendWeeks=+e.target.value;renderTrend();};
   const dz=$('dropzone'),fi=$('fileInput');dz.onclick=()=>fi.click();fi.onchange=e=>{if(e.target.files.length)handleFiles([...e.target.files]);fi.value='';};
   ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
   ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
